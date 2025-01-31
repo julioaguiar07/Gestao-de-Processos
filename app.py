@@ -175,11 +175,12 @@ def enviar_mensagem(texto):
     try:
         response = requests.post(url, json=payload)
         response.raise_for_status()  # Verifica se a requisição foi bem-sucedida
-        print("Mensagem enviada com sucesso:", response.json())  # Para depuração
+        print("Mensagem enviada com sucesso:", response.json())  # Log para depuração
     except requests.exceptions.RequestException as e:
-        print("Erro ao enviar mensagem:", e)  # Para depuração
+        print("Erro ao enviar mensagem:", e)  # Log para depuração
+
+# Função para verificar prazos
 def verificar_prazos():
-    # Busca processos com status "Em andamento"
     cursor.execute('SELECT id, prazo_final, numero_processo FROM processos WHERE status = "Em andamento"')
     processos = cursor.fetchall()
     print(f"Processos em andamento encontrados: {len(processos)}")  # Log para depuração

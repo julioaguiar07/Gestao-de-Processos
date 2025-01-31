@@ -2,7 +2,6 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime, timedelta
-import yagmail
 from fpdf import FPDF
 import plotly.express as px
 import requests 
@@ -166,13 +165,15 @@ def contar_processos_por_status():
     cursor.execute('SELECT status, COUNT(*) FROM processos GROUP BY status')
     return {status: count for status, count in cursor.fetchall()}
 
-def enviar_email(destinatario, assunto, mensagem):
-    try:
-        yag = yagmail.SMTP("julioaguiar05@gmail.com", "ibod typg fovl fson")  
-        yag.send(to=destinatario, subject=assunto, contents=mensagem)
-        st.success("E-mail enviado com sucesso!")
-    except Exception as e:
-        st.error(f"Erro ao enviar e-mail: {e}")
+
+TOKEN = "7675741218:AAHTrrWDS05aiSq2qY3vcrAhsLNLRaz9dhI"
+CHAT_ID = "-1002371255186" 
+
+def enviar_mensagem(texto):
+    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    payload = {"chat_id": CHAT_ID, "text": texto}
+    response = requests.post(url, json=payload)
+    print(response.json())  # Para depuração
 
 def verificar_prazos():
     cursor.execute('SELECT id, prazo_final, numero_processo FROM processos WHERE status = "Em andamento"')
@@ -184,8 +185,7 @@ def verificar_prazos():
         dias_restantes = (prazo_final - hoje).days
 
         if 0 < dias_restantes <= 7:  # Alerta se faltar 5 dias ou menos
-            mensagem = f"O processo nº {processo[2]} está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias."
-            enviar_email("julioaguiar05@gmail.com", "Alerta de Prazo", mensagem)
+            enviar_mensagem(f"O processo nº {processo[2]} está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias.")
 
 def gerar_relatorio_pdf(processos):
     pdf = FPDF()
@@ -394,8 +394,7 @@ elif opcao == "Cadastrar Processos":
             if enviar:
                 adicionar_processo(numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
                 st.success("Processo cadastrado com sucesso!")
-                mensagem = f"Um novo processo de número {numero_processo} foi criado!. O responsável por ele é: {responsavel}, ele é de {prioridade} prioridade, e sua descrição é: {descricao} Atenção! Prazo final: {prazo_final} dias."
-                enviar_email("julioaguiar05@gmail.com", "Alerta de Prazo", mensagem)
+                enviar_mensagem(f"Um novo processo de número {numero_processo} foi criado! O responsável por ele é: {responsavel}, sua situação: {status}, e sua descrição é: {descricao}. Prazo final: {prazo_final}.")
 
     elif modo_cadastro == "Automático (Brasil API)":
         with st.form("form_cadastro_automatico"):
@@ -499,4 +498,3 @@ elif opcao == "Controle Financeiro":
         st.plotly_chart(fig_bar)
     else:
         st.info("Nenhum dado disponível para exibir gráficos.")
-

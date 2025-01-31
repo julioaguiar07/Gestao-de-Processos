@@ -181,11 +181,14 @@ def enviar_mensagem(texto):
 
 # Função para verificar prazos
 def verificar_prazos():
+    # Busca todos os processos
     cursor.execute('SELECT id, prazo_final, numero_processo, status FROM processos')
     processos = cursor.fetchall()
     print(f"Total de processos encontrados: {len(processos)}")  # Log para depuração
 
     hoje = datetime.now()
+    mensagens_enviadas = 0  # Contador de mensagens enviadas
+
     for processo in processos:
         prazo_final = datetime.strptime(processo[1], "%Y-%m-%d")
         dias_restantes = (prazo_final - hoje).days
@@ -198,9 +201,16 @@ def verificar_prazos():
             try:
                 enviar_mensagem(mensagem)
                 st.sidebar.success(f"Mensagem enviada para o processo nº {processo[2]}")
+                mensagens_enviadas += 1  # Incrementa o contador
             except Exception as e:
                 print(f"Erro ao enviar mensagem: {e}")  # Log para depuração
                 st.sidebar.error(f"Erro ao enviar mensagem para o processo nº {processo[2]}")
+
+    # Confirmação final
+    if mensagens_enviadas > 0:
+        st.sidebar.success(f"Total de mensagens enviadas: {mensagens_enviadas}")
+    else:
+        st.sidebar.warning("Nenhum processo próximo do prazo foi encontrado.")
 def gerar_relatorio_pdf(processos):
     pdf = FPDF()
     pdf.add_page()

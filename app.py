@@ -258,8 +258,9 @@ opcao = st.sidebar.radio("Páginas", ["Início", "Cadastrar Processos", "Tarefas
 if opcao == "Início":
     st.image("logo.png", width=300)
     st.subheader("Consulta e Atualização de Processos")
-
-        st.write("### Consultar Processo na Brasil API")
+    
+    # Campo para buscar processo na Brasil API
+    st.write("### Consultar Processo na Brasil API")
     numero_processo = st.text_input("Digite o número do processo (formato CNJ):")
 
     if st.button("Buscar Processo"):
@@ -270,7 +271,6 @@ if opcao == "Início":
                 st.json(dados_processo)  # Exibe os dados em formato JSON
         else:
             st.error("Por favor, insira um número de processo válido.")
-
 
     # Filtros
     st.write("### Filtrar Processos")

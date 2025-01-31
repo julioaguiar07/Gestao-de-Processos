@@ -1,0 +1,9 @@
+streamlit
+sqlite3
+pandas 
+datetime
+yagmail
+fpdf
+plotly.express 
+requests 
+base64

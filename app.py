@@ -167,14 +167,17 @@ def contar_processos_por_status():
 
 
 TOKEN = "7675741218:AAHTrrWDS05aiSq2qY3vcrAhsLNLRaz9dhI"
-CHAT_ID = "-1002371255186" 
+CHAT_ID = "-1002371255186"
 
 def enviar_mensagem(texto):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
     payload = {"chat_id": CHAT_ID, "text": texto}
-    response = requests.post(url, json=payload)
-    print(response.json())  # Para depuração
-
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()  # Verifica se a requisição foi bem-sucedida
+        print("Mensagem enviada com sucesso:", response.json())  # Para depuração
+    except requests.exceptions.RequestException as e:
+        print("Erro ao enviar mensagem:", e)  # Para depuração
 def verificar_prazos():
     cursor.execute('SELECT id, prazo_final, numero_processo FROM processos WHERE status = "Em andamento"')
     processos = cursor.fetchall()
@@ -184,7 +187,8 @@ def verificar_prazos():
         prazo_final = datetime.strptime(processo[1], "%Y-%m-%d")
         dias_restantes = (prazo_final - hoje).days
 
-        if 0 < dias_restantes <= 7:  
+        # Verifica se o prazo está entre 1 e 7 dias
+        if 0 < dias_restantes <= 7:
             mensagem = f"Queria te avisar que o processo nº {processo[2]} está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias."
             enviar_mensagem(mensagem)
             st.sidebar.success(f"Mensagem enviada para o processo nº {processo[2]}")

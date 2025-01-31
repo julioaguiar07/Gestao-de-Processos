@@ -184,8 +184,8 @@ def verificar_prazos():
         prazo_final = datetime.strptime(processo[1], "%Y-%m-%d")
         dias_restantes = (prazo_final - hoje).days
 
-        if 0 < dias_restantes <= 7:  # Alerta se faltar 5 dias ou menos
-            enviar_mensagem(f"O processo nº {processo[2]} está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias.")
+        if 0 < dias_restantes <= 7:  
+            enviar_mensagem(f"Queria te avisar que o processo nº {processo[2]} está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias.")
 
 def gerar_relatorio_pdf(processos):
     pdf = FPDF()

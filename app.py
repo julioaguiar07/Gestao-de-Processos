@@ -230,9 +230,12 @@ def calcular_total_financeiro():
 
 # Função para buscar processo na Brasil API
 def buscar_processo_brasil_api(numero_processo):
+    # Remove pontos e hífens para verificar se o restante são dígitos
+    numero_limpo = numero_processo.replace(".", "").replace("-", "")
+    
     # Verifica se o número do processo está no formato CNJ
-    if not numero_processo or len(numero_processo) != 20 or not numero_processo.replace(".", "").replace("-", "").isdigit():
-        st.error("Número do processo inválido. O número deve estar no formato CNJ (20 dígitos).")
+    if not numero_processo or not numero_limpo.isdigit() or len(numero_limpo) != 20:
+        st.error("Número do processo inválido. O número deve estar no formato CNJ (exemplo: 5001682-88.2020.8.13.0672).")
         return None
 
     url = f"https://brasilapi.com.br/api/cnj/v1/{numero_processo}"

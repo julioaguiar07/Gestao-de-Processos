@@ -179,19 +179,27 @@ def enviar_mensagem(texto):
     except requests.exceptions.RequestException as e:
         print("Erro ao enviar mensagem:", e)  # Para depuração
 def verificar_prazos():
+    # Busca processos com status "Em andamento"
     cursor.execute('SELECT id, prazo_final, numero_processo FROM processos WHERE status = "Em andamento"')
     processos = cursor.fetchall()
+    print(f"Processos em andamento encontrados: {len(processos)}")  # Log para depuração
 
     hoje = datetime.now()
     for processo in processos:
         prazo_final = datetime.strptime(processo[1], "%Y-%m-%d")
         dias_restantes = (prazo_final - hoje).days
+        print(f"Processo {processo[2]}: {dias_restantes} dias restantes")  # Log para depuração
 
         # Verifica se o prazo está entre 1 e 7 dias
         if 0 < dias_restantes <= 7:
             mensagem = f"Queria te avisar que o processo nº {processo[2]} está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias."
-            enviar_mensagem(mensagem)
-            st.sidebar.success(f"Mensagem enviada para o processo nº {processo[2]}")
+            print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
+            try:
+                enviar_mensagem(mensagem)
+                st.sidebar.success(f"Mensagem enviada para o processo nº {processo[2]}")
+            except Exception as e:
+                print(f"Erro ao enviar mensagem: {e}")  # Log para depuração
+                st.sidebar.error(f"Erro ao enviar mensagem para o processo nº {processo[2]}")
 def gerar_relatorio_pdf(processos):
     pdf = FPDF()
     pdf.add_page()

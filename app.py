@@ -185,8 +185,9 @@ def verificar_prazos():
         dias_restantes = (prazo_final - hoje).days
 
         if 0 < dias_restantes <= 7:  
-            enviar_mensagem(f"Queria te avisar que o processo nº {processo[2]} está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias.")
-
+            mensagem = f"Queria te avisar que o processo nº {processo[2]} está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias."
+            enviar_mensagem(mensagem)
+            st.sidebar.success(f"Mensagem enviada para o processo nº {processo[2]}")
 def gerar_relatorio_pdf(processos):
     pdf = FPDF()
     pdf.add_page()
@@ -229,15 +230,23 @@ def calcular_total_financeiro():
 
 # Função para buscar processo na Brasil API
 def buscar_processo_brasil_api(numero_processo):
+    # Verifica se o número do processo está no formato CNJ
+    if not numero_processo or len(numero_processo) != 20 or not numero_processo.replace(".", "").replace("-", "").isdigit():
+        st.error("Número do processo inválido. O número deve estar no formato CNJ (20 dígitos).")
+        return None
+
     url = f"https://brasilapi.com.br/api/cnj/v1/{numero_processo}"
-    response = requests.get(url)
-    
-    if response.status_code == 200:
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Levanta uma exceção para códigos de erro HTTP
         return response.json()  # Retorna os dados do processo
-    elif response.status_code == 404:
-        st.error("Processo não encontrado. Verifique o número do processo e tente novamente.")
-    else:
-        st.error(f"Erro ao consultar o processo: {response.status_code}")
+    except requests.exceptions.HTTPError as e:
+        if response.status_code == 404:
+            st.error("Processo não encontrado. Verifique o número do processo e tente novamente.")
+        else:
+            st.error(f"Erro ao consultar o processo: {e}")
+    except requests.exceptions.RequestException as e:
+        st.error(f"Erro de conexão: {e}")
     return None
 
 # Interface do Streamlit
@@ -249,6 +258,18 @@ opcao = st.sidebar.radio("Páginas", ["Início", "Cadastrar Processos", "Tarefas
 if opcao == "Início":
     st.image("logo.png", width=300)
     st.subheader("Consulta e Atualização de Processos")
+
+        st.write("### Consultar Processo na Brasil API")
+    numero_processo = st.text_input("Digite o número do processo (formato CNJ):")
+
+    if st.button("Buscar Processo"):
+        if numero_processo:
+            dados_processo = buscar_processo_brasil_api(numero_processo)
+            if dados_processo:
+                st.write("### Dados do Processo")
+                st.json(dados_processo)  # Exibe os dados em formato JSON
+        else:
+            st.error("Por favor, insira um número de processo válido.")
 
 
     # Filtros

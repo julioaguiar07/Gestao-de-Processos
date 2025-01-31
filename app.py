@@ -250,12 +250,6 @@ if opcao == "Início":
     st.image("logo.png", width=300)
     st.subheader("Consulta e Atualização de Processos")
 
-    # Métricas visuais
-    contagem = contar_processos_por_status()
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Processos em Andamento", contagem.get("Em andamento", 0))
-    col2.metric("Processos Concluídos", contagem.get("Concluído", 0))
-    col3.metric("Processos Finalizados", contagem.get("Finalizado", 0))
 
     # Filtros
     st.write("### Filtrar Processos")

@@ -228,30 +228,6 @@ def calcular_total_financeiro():
     cursor.execute('SELECT tipo, SUM(valor) FROM financeiro GROUP BY tipo')
     return {tipo: total for tipo, total in cursor.fetchall()}
 
-# Função para buscar processo na Brasil API
-def buscar_processo_brasil_api(numero_processo):
-    # Remove pontos e hífens para verificar se o restante são dígitos
-    numero_limpo = numero_processo.replace(".", "").replace("-", "")
-    
-    # Verifica se o número do processo está no formato CNJ
-    if not numero_processo or not numero_limpo.isdigit() or len(numero_limpo) != 20:
-        st.error("Número do processo inválido. O número deve estar no formato CNJ (exemplo: 5001682-88.2020.8.13.0672).")
-        return None
-
-    url = f"https://brasilapi.com.br/api/cnj/v1/{numero_processo}"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Levanta uma exceção para códigos de erro HTTP
-        return response.json()  # Retorna os dados do processo
-    except requests.exceptions.HTTPError as e:
-        if response.status_code == 404:
-            st.error("Processo não encontrado. Verifique o número do processo e tente novamente.")
-        else:
-            st.error(f"Erro ao consultar o processo: {e}")
-    except requests.exceptions.RequestException as e:
-        st.error(f"Erro de conexão: {e}")
-    return None
-
 # Interface do Streamlit
 st.sidebar.title("Gestão de Processos 📂")
 st.sidebar.text("Sistema de Gerenciamento")
@@ -261,19 +237,7 @@ opcao = st.sidebar.radio("Páginas", ["Início", "Cadastrar Processos", "Tarefas
 if opcao == "Início":
     st.image("logo.png", width=300)
     st.subheader("Consulta e Atualização de Processos")
-    
-    # Campo para buscar processo na Brasil API
-    st.write("### Consultar Processo na Brasil API")
-    numero_processo = st.text_input("Digite o número do processo (formato CNJ):")
 
-    if st.button("Buscar Processo"):
-        if numero_processo:
-            dados_processo = buscar_processo_brasil_api(numero_processo)
-            if dados_processo:
-                st.write("### Dados do Processo")
-                st.json(dados_processo)  # Exibe os dados em formato JSON
-        else:
-            st.error("Por favor, insira um número de processo válido.")
 
     # Filtros
     st.write("### Filtrar Processos")
@@ -373,7 +337,7 @@ elif opcao == "Cadastrar Processos":
     st.title("Cadastrar Novo Processo")
 
     # Opção para escolher entre adicionar manualmente ou buscar automaticamente
-    modo_cadastro = st.radio("Escolha o modo de cadastro:", ("Manual", "Automático (Brasil API)"))
+    modo_cadastro = st.radio("Escolha o modo de cadastro:", ("Manual"))
 
     if modo_cadastro == "Manual":
         with st.form("form_cadastro_manual"):
@@ -419,36 +383,7 @@ elif opcao == "Cadastrar Processos":
                 adicionar_processo(numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
                 st.success("Processo cadastrado com sucesso!")
                 enviar_mensagem(f"Um novo processo de número {numero_processo} foi criado! O responsável por ele é: {responsavel}, sua situação: {status}, e sua descrição é: {descricao}. Prazo final: {prazo_final}.")
-
-    elif modo_cadastro == "Automático (Brasil API)":
-        with st.form("form_cadastro_automatico"):
-            numero_processo = st.text_input("Nº do Processo (formato CNJ, ex: 0710802-55.2018.8.02.0001)")
-            buscar = st.form_submit_button("Buscar Processo")
-
-            if buscar:
-                if not numero_processo:
-                    st.error("Por favor, insira um número de processo válido.")
-                else:
-                    dados_processo = buscar_processo_brasil_api(numero_processo)
-                    if dados_processo:
-                        st.write("### Dados do Processo Encontrado")
-                        st.write(f"**Número do Processo:** {dados_processo.get('numero')}")
-                        st.write(f"**Classe:** {dados_processo.get('classe')}")
-                        st.write(f"**Assunto:** {dados_processo.get('assunto')}")
-                        st.write(f"**Órgão Julgador:** {dados_processo.get('orgao_julgador')}")
-                        st.write(f"**Status:** {dados_processo.get('status')}")
-
-                        # Preencher automaticamente o formulário de cadastro
-                        data = datetime.now().strftime("%Y-%m-%d")
-                        prazo_final = (datetime.now() + timedelta(days=30)).strftime("%Y-%m-%d")  # Prazo de 30 dias
-                        descricao = f"Processo {dados_processo.get('numero')} - {dados_processo.get('assunto')}"
-                        responsavel = "Responsável Padrão"  # Defina um responsável padrão ou permita a edição
-                        status = "Em andamento"
-                        prioridade = "Média"
-
-                        if st.form_submit_button("Cadastrar com Dados da API"):
-                            adicionar_processo(numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
-                            st.success("Processo cadastrado com sucesso!")
+                
 
 elif opcao == "Tarefas":
     st.title("Gestão de Tarefas")

@@ -181,19 +181,19 @@ def enviar_mensagem(texto):
 
 # Função para verificar prazos
 def verificar_prazos():
-    cursor.execute('SELECT id, prazo_final, numero_processo FROM processos WHERE status = "Em andamento"')
+    cursor.execute('SELECT id, prazo_final, numero_processo, status FROM processos')
     processos = cursor.fetchall()
-    print(f"Processos em andamento encontrados: {len(processos)}")  # Log para depuração
+    print(f"Total de processos encontrados: {len(processos)}")  # Log para depuração
 
     hoje = datetime.now()
     for processo in processos:
         prazo_final = datetime.strptime(processo[1], "%Y-%m-%d")
         dias_restantes = (prazo_final - hoje).days
-        print(f"Processo {processo[2]}: {dias_restantes} dias restantes")  # Log para depuração
+        print(f"Processo {processo[2]} (Status: {processo[3]}): {dias_restantes} dias restantes")  # Log para depuração
 
-        # Verifica se o prazo está entre 1 e 7 dias
-        if 0 < dias_restantes <= 7:
-            mensagem = f"Queria te avisar que o processo nº {processo[2]} está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias."
+        # Verifica se o prazo está entre 0 e 7 dias
+        if 0 <= dias_restantes <= 7:
+            mensagem = f"Queria te avisar que o processo nº {processo[2]} (Status: {processo[3]}) está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias."
             print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
             try:
                 enviar_mensagem(mensagem)
@@ -470,3 +470,22 @@ elif opcao == "Controle Financeiro":
         st.plotly_chart(fig_bar)
     else:
         st.info("Nenhum dado disponível para exibir gráficos.")
+
+# Adiciona processos com prazos próximos
+hoje = datetime.now()
+
+# Processo com 5 dias restantes
+prazo_final_1 = (hoje + timedelta(days=5)).strftime("%Y-%m-%d")
+cursor.execute('''
+INSERT INTO processos (numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+''', ("5001682-88.2020.8.13.0672", hoje.strftime("%Y-%m-%d"), prazo_final_1, "Processo de teste 1", "João Silva", "Em andamento", "Alta"))
+
+# Processo com 0 dias restantes (prazo final hoje)
+prazo_final_2 = hoje.strftime("%Y-%m-%d")
+cursor.execute('''
+INSERT INTO processos (numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
+VALUES (?, ?, ?, ?, ?, ?, ?)
+''', ("1234567-89.2021.9.14.0789", hoje.strftime("%Y-%m-%d"), prazo_final_2, "Processo de teste 2", "Maria Oliveira", "Finalizado", "Média"))
+
+conn.commit()

@@ -471,21 +471,3 @@ elif opcao == "Controle Financeiro":
     else:
         st.info("Nenhum dado disponível para exibir gráficos.")
 
-# Adiciona processos com prazos próximos
-hoje = datetime.now()
-
-# Processo com 5 dias restantes
-prazo_final_1 = (hoje + timedelta(days=5)).strftime("%Y-%m-%d")
-cursor.execute('''
-INSERT INTO processos (numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
-VALUES (?, ?, ?, ?, ?, ?, ?)
-''', ("5001682-88.2020.8.13.0672", hoje.strftime("%Y-%m-%d"), prazo_final_1, "Processo de teste 1", "João Silva", "Em andamento", "Alta"))
-
-# Processo com 0 dias restantes (prazo final hoje)
-prazo_final_2 = hoje.strftime("%Y-%m-%d")
-cursor.execute('''
-INSERT INTO processos (numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
-VALUES (?, ?, ?, ?, ?, ?, ?)
-''', ("1234567-89.2021.9.14.0789", hoje.strftime("%Y-%m-%d"), prazo_final_2, "Processo de teste 2", "Maria Oliveira", "Finalizado", "Média"))
-
-conn.commit()

@@ -449,11 +449,11 @@ elif opcao == "Cadastrar Processos":
                 mensagem = f"""
                 🧑‍⚖️ **Processo Novo Criado!** 🧑‍⚖️
                 
-                📋 **Processo:** #{processo[2]}  
-                📌 **Situação:** {processo[3]}  
-                🤵🏻 **Responsável(s):** {processo[5]}
-                📅 **Prazo Final:** {prazo_final.strftime('%Y-%m-%d')}  
-                🚩 **Prioridade:** {processo[7]}  
+                📋 **Processo:** #{numero_processo}  
+                📌 **Situação:** {status}  
+                🤵🏻 **Responsável(s):** {responsavel}
+                📅 **Prazo Final:** {prazo_final}  
+                🚩 **Prioridade:** {prioridade}  
                 """
                 print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
                 try:

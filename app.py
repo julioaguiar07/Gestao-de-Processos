@@ -257,7 +257,7 @@ def adicionar_tarefa(id_processo, descricao, data):
     """, (id_processo, descricao, data))
     conn.commit()
     # Enviar mensagem via Telegram
-    mensagem = f"""
+    mensagem = f'''
 ✅ Nova Tarefa Criada ✅
 
 📋 Processo ID: #{id_processo}  
@@ -265,7 +265,7 @@ def adicionar_tarefa(id_processo, descricao, data):
 📅 Data: {data}
 
 ⚠️ **Atenção:** Não se esqueça de realizar essa tarefa dentro do prazo!
-"""
+'''
     enviar_mensagem(mensagem)
 
 def listar_tarefas(id_processo):
@@ -279,7 +279,7 @@ def adicionar_registro_financeiro(id_processo, tipo, valor, data, descricao):
     """, (id_processo, tipo, valor, data, descricao))
     conn.commit()
     # Enviar mensagem via Telegram
-    mensagem = f"""
+    mensagem = f'''
 💰 Novo Registro Financeiro 💰
 
 📋 Processo ID: {id_processo}  
@@ -289,7 +289,7 @@ def adicionar_registro_financeiro(id_processo, tipo, valor, data, descricao):
 📝 Descrição: {descricao}
 
 ⚠️ **Atenção:** Registro financeiro adicionado com sucesso. Verifique as métricas atualizadas.
-"""
+'''
     enviar_mensagem(mensagem)
 
 def listar_registros_financeiros(id_processo=None):
@@ -497,7 +497,7 @@ elif opcao == "Cadastrar Processos":
                 st.success("Processo cadastrado com sucesso!")
     
                 # Mensagem formatada para o Telegram
-                mensagem = f"""
+                mensagem = f'''
 🧑‍⚖️ Processo Novo Criado! 🧑‍⚖️
 
 📋 Processo: {numero_processo}  
@@ -505,7 +505,7 @@ elif opcao == "Cadastrar Processos":
 🤵🏻 Responsável(s): {responsavel}
 📅 Prazo Final: {prazo_final}  
 🚩 Prioridade: {prioridade}  
-"""
+'''
                 print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
                 try:
                     enviar_mensagem(mensagem)

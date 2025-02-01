@@ -5,3 +5,4 @@ plotly>=5.0.0
 fpdf
 yagmail
 keyring
+streamlit_calendar

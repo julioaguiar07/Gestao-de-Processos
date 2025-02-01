@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS tarefas (
 )
 """)
 
-cursor.execute('''
+cursor.execute("""
 CREATE TABLE IF NOT EXISTS financeiro (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     id_processo INTEGER NOT NULL,

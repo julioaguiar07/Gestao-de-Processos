@@ -109,6 +109,7 @@ CREATE TABLE IF NOT EXISTS financeiro (
 )
 ''')
 
+cursor.execute('''
 CREATE TABLE IF NOT EXISTS documentos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     id_processo INTEGER NOT NULL,
@@ -116,7 +117,8 @@ CREATE TABLE IF NOT EXISTS documentos (
     caminho_arquivo TEXT NOT NULL,
     data_upload TEXT NOT NULL
 )
-''')
+''')  
+
 
 conn.commit()
 

@@ -7,6 +7,7 @@ import plotly.express as px
 import requests 
 import base64
 from streamlit_calendar import calendar
+import os
 
 
 
@@ -108,6 +109,9 @@ CREATE TABLE IF NOT EXISTS financeiro (
     descricao TEXT
 )
 ''')
+
+if not os.path.exists("documentos"):
+    os.makedirs("documentos")
 
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS documentos (
@@ -308,6 +312,16 @@ def calcular_total_financeiro():
     return {tipo: total for tipo, total in cursor.fetchall()}
 
 # Função para adicionar documento
+
+
+# Função para criar subpasta de um processo
+def criar_subpasta_processo(id_processo):
+    pasta_processo = f"documentos/processo_{id_processo}"
+    if not os.path.exists(pasta_processo):
+        os.makedirs(pasta_processo)
+    return pasta_processo
+
+# Função para adicionar documento
 def adicionar_documento(id_processo, nome_arquivo, caminho_arquivo):
     data_upload = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cursor.execute('''
@@ -316,6 +330,18 @@ def adicionar_documento(id_processo, nome_arquivo, caminho_arquivo):
     ''', (id_processo, nome_arquivo, caminho_arquivo, data_upload))
     conn.commit()
 
+    # Enviar mensagem ao Telegram
+    mensagem = f"""
+📄 Novo Documento Adicionado 📄
+
+📋 Processo ID: {id_processo}  
+📂 Nome do Arquivo: {nome_arquivo}  
+📅 Data de Upload: {data_upload}
+
+⚠️ **Atenção:** Verifique o documento no sistema.
+"""
+    enviar_mensagem(mensagem)
+
 # Função para listar documentos de um processo
 def listar_documentos(id_processo):
     cursor.execute('SELECT * FROM documentos WHERE id_processo = ?', (id_processo,))
@@ -323,6 +349,15 @@ def listar_documentos(id_processo):
 
 # Função para excluir documento
 def excluir_documento(id_documento):
+    # Buscar o caminho do arquivo antes de excluir
+    cursor.execute('SELECT caminho_arquivo FROM documentos WHERE id = ?', (id_documento,))
+    caminho_arquivo = cursor.fetchone()[0]
+
+    # Excluir o arquivo físico
+    if os.path.exists(caminho_arquivo):
+        os.remove(caminho_arquivo)
+
+    # Excluir o registro do banco de dados
     cursor.execute('DELETE FROM documentos WHERE id = ?', (id_documento,))
     conn.commit()
     
@@ -331,7 +366,7 @@ def buscar_eventos():
     SELECT id, numero_processo, prazo_final, descricao, status
     FROM processos
     WHERE prazo_final IS NOT NULL
-''')  # <-- Fechamento correto
+    ''')
     processos = cursor.fetchall()
     eventos = []
     for processo in processos:
@@ -347,7 +382,7 @@ def buscar_eventos():
 st.sidebar.title("Gestão de Processos 📂")
 st.sidebar.text("Sistema de Gerenciamento")
 
-opcao = st.sidebar.radio("Páginas", ["Início", "Cadastrar Processos", "Tarefas", "Relatórios", "Controle Financeiro"])
+opcao = st.sidebar.radio("Páginas", ["Início", "Cadastrar Processos", "Tarefas", "Relatórios", "Controle Financeiro", "Calendário", "Gestão de Documentos"])
 
 if opcao == "Início":
     st.image("logo.png", width=300)
@@ -607,42 +642,57 @@ elif opcao == "Controle Financeiro":
     else:
         st.info("Nenhum dado disponível para exibir gráficos.")
 
-elif opcao == "Gestão de Documentos":
+if opcao == "Gestão de Documentos":
     st.title("Gestão de Documentos 📂")
-    id_processo = st.number_input("ID do Processo", min_value=1, key="documentos_id_processo")
 
-    # Upload de Documentos
-    st.write("### Adicionar Documento")
-    uploaded_file = st.file_uploader("Escolha um arquivo", type=["pdf", "docx", "xlsx", "txt"])
-    if uploaded_file is not None:
-        nome_arquivo = uploaded_file.name
-        caminho_arquivo = f"documentos/{id_processo}_{nome_arquivo}"
-        with open(caminho_arquivo, "wb") as f:
-            f.write(uploaded_file.getbuffer())
-        adicionar_documento(id_processo, nome_arquivo, caminho_arquivo)
-        st.success("Documento adicionado com sucesso!")
+    # Listar processos existentes para escolher o ID
+    cursor.execute('SELECT id, numero_processo FROM processos')
+    processos = cursor.fetchall()
+    if processos:
+        processo_escolhido = st.selectbox(
+            "Selecione um Processo",
+            options=[f"ID: {p[0]} - Nº Processo: {p[1]}" for p in processos],
+            key="select_processo"
+        )
+        id_processo = int(processo_escolhido.split(" - ")[0].replace("ID: ", ""))
 
-    # Listar Documentos
-    st.write("### Documentos do Processo")
-    documentos = listar_documentos(id_processo)
-    if documentos:
-        for doc in documentos:
-            st.write(f"**ID:** {doc[0]} | **Nome:** {doc[2]} | **Data de Upload:** {doc[4]}")
-            with open(doc[3], "rb") as f:
-                st.download_button(
-                    label="Baixar Documento",
-                    data=f,
-                    file_name=doc[2],
-                    mime="application/octet-stream"
-                )
-            if st.button(f"Excluir Documento {doc[0]}", key=f"excluir_doc_{doc[0]}"):
-                excluir_documento(doc[0])
-                st.success("Documento excluído com sucesso!")
-                st.experimental_rerun()  # Recarregar a página
+        # Criar subpasta para o processo, se não existir
+        pasta_processo = criar_subpasta_processo(id_processo)
+
+        # Upload de Documentos
+        st.write("### Adicionar Documento")
+        uploaded_file = st.file_uploader("Escolha um arquivo", type=["pdf", "docx", "xlsx", "txt"])
+        if uploaded_file is not None:
+            nome_arquivo = uploaded_file.name
+            caminho_arquivo = f"{pasta_processo}/{nome_arquivo}"
+            with open(caminho_arquivo, "wb") as f:
+                f.write(uploaded_file.getbuffer())
+            adicionar_documento(id_processo, nome_arquivo, caminho_arquivo)
+            st.success("Documento adicionado com sucesso!")
+
+        # Listar Documentos
+        st.write("### Documentos do Processo")
+        documentos = listar_documentos(id_processo)
+        if documentos:
+            for doc in documentos:
+                st.write(f"**ID:** {doc[0]} | **Nome:** {doc[2]} | **Data de Upload:** {doc[4]}")
+                with open(doc[3], "rb") as f:
+                    st.download_button(
+                        label="Baixar Documento",
+                        data=f,
+                        file_name=doc[2],
+                        mime="application/octet-stream"
+                    )
+                if st.button(f"Excluir Documento {doc[0]}", key=f"excluir_doc_{doc[0]}"):
+                    excluir_documento(doc[0])
+                    st.success("Documento excluído com sucesso!")
+                    st.button("Recarregar Página")  # Recarregar a página
+        else:
+            st.info("Nenhum documento encontrado para este processo.")
     else:
-        st.info("Nenhum documento encontrado para este processo.")
+        st.warning("Nenhum processo cadastrado. Cadastre um processo primeiro.")
 
-elif opcao == "Calendário de Prazos e Audiências":
+if opcao == "Calendário de Prazos e Audiências":
     st.title("Calendário de Prazos e Audiências 📅")
     eventos = buscar_eventos()
 

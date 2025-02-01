@@ -465,7 +465,7 @@ elif opcao == "Controle Financeiro":
         if st.button("Excluir Registro", key="excluir_registro_botao"):
             excluir_registro_financeiro(id_registro_excluir)
             st.success("Registro financeiro excluído com sucesso!")
-            st.experimental_rerun()  # Recarrega a página para atualizar a tabela
+            st.button("Recarregar Página")  # Adiciona um botão para recarregar manualmente
     else:
         st.info("Nenhum registro financeiro encontrado.")
 

@@ -212,16 +212,17 @@ def verificar_prazos():
 
         # Verifica se o prazo está entre 0 e 7 dias
         if 0 <= dias_restantes <= 7:
-            mensagem = f"""  🚨 Alerta de Prazo 🚨
+            mensagem = f''' 
+🚨 Alerta de Prazo 🚨
             
-            📋 Processo: #{processo[2]}  
-            📌 Status: {processo[3]}  
-            📅 Prazo Final: {prazo_final.strftime('%Y-%m-%d')}  
-            ⏳ Dias Restantes: {'**HOJE**' if dias_restantes == 0 else f'{dias_restantes} dia(s)'}
-            
-            ⚠️ **Atenção:** Este processo está próximo do prazo final. Tome as providências necessárias."""
-           
+📋 Processo: #{processo[2]}  
+📌 Status: {processo[3]}  
+📅 Prazo Final: {prazo_final.strftime('%Y-%m-%d')}  
+⏳ Dias Restantes: {'**HOJE**' if dias_restantes == 0 else f'{dias_restantes} dia(s)'}
 
+⚠️ **Atenção:** Este processo está próximo do prazo final. Tome as providências necessárias.
+''' 
+           
             print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
             try:
                 enviar_mensagem(mensagem)

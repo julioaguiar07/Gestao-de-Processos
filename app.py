@@ -449,13 +449,13 @@ elif opcao == "Cadastrar Processos":
     
                 # Mensagem formatada para o Telegram
                 mensagem = f"""
-🧑‍⚖️ **Processo Novo Criado!** 🧑‍⚖️
+🧑‍⚖️ Processo Novo Criado! 🧑‍⚖️
 
-📋 **Processo:** #{numero_processo}  
-📌 **Situação:** {status}  
-🤵🏻 **Responsável(s):** {responsavel}
-📅 **Prazo Final:** {prazo_final}  
-🚩 **Prioridade:** {prioridade}  
+📋 Processo: {numero_processo}  
+📌 Situação: {status}  
+🤵🏻 Responsável(s): {responsavel}
+📅 Prazo Final: {prazo_final}  
+🚩 Prioridade: {prioridade}  
 """
                 print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
                 try:

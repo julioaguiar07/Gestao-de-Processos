@@ -488,10 +488,6 @@ elif opcao == "Tarefas":
         st.success("Tarefa excluída com sucesso!")
         st.button("Recarregar Página")  
 
-    st.write("### Tarefas do Processo")
-    tarefas = listar_tarefas(id_processo)
-    for tarefa in tarefas:
-        st.write(f"**Descrição:** {tarefa[2]} | **Data:** {tarefa[3]} | **Concluída:** {'Sim' if tarefa[4] else 'Não'}")
 
 elif opcao == "Relatórios":
     st.title("Relatórios")

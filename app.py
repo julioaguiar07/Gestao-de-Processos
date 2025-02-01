@@ -201,12 +201,12 @@ def verificar_prazos():
         # Verifica se o prazo está entre 0 e 7 dias
         if 0 <= dias_restantes <= 7:
             mensagem = f"""
-🚨 **Alerta de Prazo** 🚨
+🚨 Alerta de Prazo 🚨
 
-📋 **Processo:** #{processo[2]}  
-📌 **Status:** {processo[3]}  
-📅 **Prazo Final:** {prazo_final.strftime('%Y-%m-%d')}  
-⏳ **Dias Restantes:** {'**HOJE**' if dias_restantes == 0 else f'{dias_restantes} dia(s)'}
+📋 Processo: #{processo[2]}  
+📌 Status: {processo[3]}  
+📅 Prazo Final: {prazo_final.strftime('%Y-%m-%d')}  
+⏳ Dias Restantes: {'**HOJE**' if dias_restantes == 0 else f'{dias_restantes} dia(s)'}
 
 ⚠️ **Atenção:** Este processo está próximo do prazo final. Tome as providências necessárias.
 """
@@ -245,11 +245,11 @@ def adicionar_tarefa(id_processo, descricao, data):
     conn.commit()
     # Enviar mensagem via Telegram
     mensagem = f"""
-✅ **Nova Tarefa Criada** ✅
+✅ Nova Tarefa Criada ✅
 
-📋 **Processo ID:** #{id_processo}  
-📝 **Descrição:** {descricao}  
-📅 **Data:** {data}
+📋 Processo ID: #{id_processo}  
+📝 Descrição: {descricao}  
+📅 Data: {data}
 
 ⚠️ **Atenção:** Não se esqueça de realizar essa tarefa dentro do prazo!
 """
@@ -267,13 +267,13 @@ def adicionar_registro_financeiro(id_processo, tipo, valor, data, descricao):
     conn.commit()
     # Enviar mensagem via Telegram
     mensagem = f"""
-💰 **Novo Registro Financeiro** 💰
+💰 Novo Registro Financeiro 💰
 
-📋 **Processo ID:** #{id_processo}  
-📌 **Tipo:** {tipo}  
-💵 **Valor:** R$ {valor:.2f}  
-📅 **Data:** {data}  
-📝 **Descrição:** {descricao}
+📋 Processo ID: {id_processo}  
+📌 Tipo: {tipo}  
+💵 Valor: R$ {valor:.2f}  
+📅 Data: {data}  
+📝 Descrição: {descricao}
 
 ⚠️ **Atenção:** Registro financeiro adicionado com sucesso. Verifique as métricas atualizadas.
 """
@@ -447,14 +447,14 @@ elif opcao == "Cadastrar Processos":
                 adicionar_processo(numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
                 st.success("Processo cadastrado com sucesso!")
                 mensagem = f"""
-                🧑‍⚖️ **Processo Novo Criado!** 🧑‍⚖️
-                
-                📋 **Processo:** #{numero_processo}  
-                📌 **Situação:** {status}  
-                🤵🏻 **Responsável(s):** {responsavel}
-                📅 **Prazo Final:** {prazo_final}  
-                🚩 **Prioridade:** {prioridade}  
-                """
+🧑‍⚖️ Processo Novo Criado! 🧑‍⚖️
+
+📋 Processo: {numero_processo}  
+📌 Situação: {status}  
+🤵🏻 Responsável(s): {responsavel}
+📅 Prazo Final: {prazo_final}  
+🚩 Prioridade: {prioridade}  
+"""
                 print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
                 try:
                     enviar_mensagem(mensagem)

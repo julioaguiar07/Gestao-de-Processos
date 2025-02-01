@@ -458,11 +458,11 @@ elif opcao == "Cadastrar Processos":
                 print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
                 try:
                     enviar_mensagem(mensagem)
-                    st.sidebar.success(f"Mensagem enviada para o processo nº {processo[2]}")
+                    st.sidebar.success(f"Mensagem enviada para o processo nº {numero_processo}")
                     mensagens_enviadas += 1  # Incrementa o contador
                 except Exception as e:
                     print(f"Erro ao enviar mensagem: {e}")  # Log para depuração
-                    st.sidebar.error(f"Erro ao enviar mensagem para o processo nº {processo[2]}")
+                    st.sidebar.error(f"Erro ao enviar mensagem para o processo nº {numero_processo}")
 
 
 elif opcao == "Tarefas":

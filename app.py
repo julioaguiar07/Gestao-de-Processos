@@ -324,11 +324,11 @@ def excluir_documento(id_documento):
     conn.commit()
     
 def buscar_eventos():
-    cursor.execute('''
+    cursor.execute("""
     SELECT id, numero_processo, prazo_final, descricao, status
     FROM processos
     WHERE prazo_final IS NOT NULL
-''')  # <-- Fechamento correto
+""")  # <-- Fechamento correto
     processos = cursor.fetchall()
     eventos = []
     for processo in processos:

@@ -200,7 +200,7 @@ def verificar_prazos():
 
         # Verifica se o prazo está entre 0 e 7 dias
         if 0 <= dias_restantes <= 7:
-                        mensagem = f"""
+            mensagem = f"""
 🚨 **Alerta de Prazo** 🚨
 
 📋 **Processo:** #{processo[2]}  
@@ -446,7 +446,7 @@ elif opcao == "Cadastrar Processos":
             if enviar:
                 adicionar_processo(numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
                 st.success("Processo cadastrado com sucesso!")
-                           mensagem = f"""
+               mensagem = f"""
 🧑‍⚖️ **Processo Novo Criado!** 🧑‍⚖️
 
 📋 **Processo:** #{processo[2]}  

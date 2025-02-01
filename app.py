@@ -13,7 +13,7 @@ from streamlit_calendar import calendar
 # Configuração de estilo
 st.set_page_config(page_title="Gestão de Processos", layout="wide")
 st.markdown(
-    """
+    '''
     <style>
     .main-container {
         background-color: #f9f9f9;
@@ -65,7 +65,7 @@ st.markdown(
         background-color: #CF8C28;
     }
     </style>
-    """,
+    ''',
     unsafe_allow_html=True
 )
 
@@ -74,7 +74,7 @@ conn = sqlite3.connect('gestao_processos.db')
 cursor = conn.cursor()
 
 # Criar tabela de processos
-cursor.execute("""
+cursor.execute('''
 CREATE TABLE IF NOT EXISTS processos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     numero_processo TEXT NOT NULL,
@@ -85,10 +85,10 @@ CREATE TABLE IF NOT EXISTS processos (
     status TEXT NOT NULL,
     prioridade TEXT NOT NULL
 )
-""")
+''')
 
 # Criar tabela de tarefas
-cursor.execute("""
+cursor.execute('''
 CREATE TABLE IF NOT EXISTS tarefas (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     id_processo INTEGER NOT NULL,
@@ -96,9 +96,9 @@ CREATE TABLE IF NOT EXISTS tarefas (
     data TEXT NOT NULL,
     concluida INTEGER DEFAULT 0
 )
-""")
+''')
 
-cursor.execute("""
+cursor.execute('''
 CREATE TABLE IF NOT EXISTS financeiro (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     id_processo INTEGER NOT NULL,
@@ -107,7 +107,7 @@ CREATE TABLE IF NOT EXISTS financeiro (
     data TEXT NOT NULL,
     descricao TEXT
 )
-""")
+''')
 
 CREATE TABLE IF NOT EXISTS documentos (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS documentos (
     caminho_arquivo TEXT NOT NULL,
     data_upload TEXT NOT NULL
 )
-""")
+''')
 
 conn.commit()
 
@@ -128,7 +128,7 @@ def get_base64(file_path):
 background_image = get_base64("fundo.png")
 
 st.markdown(
-    f"""
+    f'''
     <style>
         .stApp {{
             background: url("data:image/png;base64,{background_image}");
@@ -136,15 +136,15 @@ st.markdown(
             background-position: center;
         }}
     </style>
-    """,
+    ''',
     unsafe_allow_html=True
 )
 # Funções do sistema
 def adicionar_processo(numero_processo, data, prazo_final, descricao, responsavel, status, prioridade):
-    cursor.execute("""
+    cursor.execute('''
     INSERT INTO processos (numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (numero_processo, data, prazo_final, descricao, responsavel, status, prioridade))
+   ''', (numero_processo, data, prazo_final, descricao, responsavel, status, prioridade))
     conn.commit()
 
 def excluir_processo(id_processo):
@@ -251,10 +251,10 @@ def excluir_registro_financeiro(id_registro):
     conn.commit()
 
 def adicionar_tarefa(id_processo, descricao, data):
-    cursor.execute("""
+    cursor.execute('''
     INSERT INTO tarefas (id_processo, descricao, data)
     VALUES (?, ?, ?)
-    """, (id_processo, descricao, data))
+    ''', (id_processo, descricao, data))
     conn.commit()
     # Enviar mensagem via Telegram
     mensagem = f'''
@@ -273,10 +273,10 @@ def listar_tarefas(id_processo):
     return cursor.fetchall()
 
 def adicionar_registro_financeiro(id_processo, tipo, valor, data, descricao):
-    cursor.execute("""
+    cursor.execute('''
     INSERT INTO financeiro (id_processo, tipo, valor, data, descricao)
     VALUES (?, ?, ?, ?, ?)
-    """, (id_processo, tipo, valor, data, descricao))
+    ''', (id_processo, tipo, valor, data, descricao))
     conn.commit()
     # Enviar mensagem via Telegram
     mensagem = f'''
@@ -308,10 +308,10 @@ def calcular_total_financeiro():
 # Função para adicionar documento
 def adicionar_documento(id_processo, nome_arquivo, caminho_arquivo):
     data_upload = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute("""
+    cursor.execute('''
     INSERT INTO documentos (id_processo, nome_arquivo, caminho_arquivo, data_upload)
     VALUES (?, ?, ?, ?)
-    """, (id_processo, nome_arquivo, caminho_arquivo, data_upload))
+    ''', (id_processo, nome_arquivo, caminho_arquivo, data_upload))
     conn.commit()
 
 # Função para listar documentos de um processo
@@ -325,11 +325,11 @@ def excluir_documento(id_documento):
     conn.commit()
     
 def buscar_eventos():
-    cursor.execute("""
+    cursor.execute('''
     SELECT id, numero_processo, prazo_final, descricao, status
     FROM processos
     WHERE prazo_final IS NOT NULL
-""")  # <-- Fechamento correto
+''')  # <-- Fechamento correto
     processos = cursor.fetchall()
     eventos = []
     for processo in processos:

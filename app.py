@@ -6,6 +6,8 @@ from fpdf import FPDF
 import plotly.express as px
 import requests 
 import base64
+from streamlit_calendar import calendar
+
 
 
 # Configuração de estilo
@@ -106,6 +108,16 @@ CREATE TABLE IF NOT EXISTS financeiro (
     descricao TEXT
 )
 ''')
+
+CREATE TABLE IF NOT EXISTS documentos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_processo INTEGER NOT NULL,
+    nome_arquivo TEXT NOT NULL,
+    caminho_arquivo TEXT NOT NULL,
+    data_upload TEXT NOT NULL
+)
+''')
+
 conn.commit()
 
 def get_base64(file_path):
@@ -292,6 +304,42 @@ def calcular_total_financeiro():
     cursor.execute('SELECT tipo, SUM(valor) FROM financeiro GROUP BY tipo')
     return {tipo: total for tipo, total in cursor.fetchall()}
 
+# Função para adicionar documento
+def adicionar_documento(id_processo, nome_arquivo, caminho_arquivo):
+    data_upload = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cursor.execute('''
+    INSERT INTO documentos (id_processo, nome_arquivo, caminho_arquivo, data_upload)
+    VALUES (?, ?, ?, ?)
+    ''', (id_processo, nome_arquivo, caminho_arquivo, data_upload))
+    conn.commit()
+
+# Função para listar documentos de um processo
+def listar_documentos(id_processo):
+    cursor.execute('SELECT * FROM documentos WHERE id_processo = ?', (id_processo,))
+    return cursor.fetchall()
+
+# Função para excluir documento
+def excluir_documento(id_documento):
+    cursor.execute('DELETE FROM documentos WHERE id = ?', (id_documento,))
+    conn.commit()
+    
+def buscar_eventos():
+    cursor.execute('''
+    SELECT id, numero_processo, prazo_final, descricao, status
+    FROM processos
+    WHERE prazo_final IS NOT NULL
+    ''')
+    processos = cursor.fetchall()
+    eventos = []
+    for processo in processos:
+        eventos.append({
+            "title": f"Prazo: {processo[1]} - {processo[3]}",
+            "start": processo[2],
+            "end": processo[2],
+            "resourceId": processo[0],
+            "color": "#FF6B6B" if processo[4] == "Aguardando" else "#4ECDC4"
+        })
+    return eventos
 # Interface do Streamlit
 st.sidebar.title("Gestão de Processos 📂")
 st.sidebar.text("Sistema de Gerenciamento")
@@ -556,3 +604,69 @@ elif opcao == "Controle Financeiro":
     else:
         st.info("Nenhum dado disponível para exibir gráficos.")
 
+elif opcao == "Gestão de Documentos":
+    st.title("Gestão de Documentos 📂")
+    id_processo = st.number_input("ID do Processo", min_value=1, key="documentos_id_processo")
+
+    # Upload de Documentos
+    st.write("### Adicionar Documento")
+    uploaded_file = st.file_uploader("Escolha um arquivo", type=["pdf", "docx", "xlsx", "txt"])
+    if uploaded_file is not None:
+        nome_arquivo = uploaded_file.name
+        caminho_arquivo = f"documentos/{id_processo}_{nome_arquivo}"
+        with open(caminho_arquivo, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        adicionar_documento(id_processo, nome_arquivo, caminho_arquivo)
+        st.success("Documento adicionado com sucesso!")
+
+    # Listar Documentos
+    st.write("### Documentos do Processo")
+    documentos = listar_documentos(id_processo)
+    if documentos:
+        for doc in documentos:
+            st.write(f"**ID:** {doc[0]} | **Nome:** {doc[2]} | **Data de Upload:** {doc[4]}")
+            with open(doc[3], "rb") as f:
+                st.download_button(
+                    label="Baixar Documento",
+                    data=f,
+                    file_name=doc[2],
+                    mime="application/octet-stream"
+                )
+            if st.button(f"Excluir Documento {doc[0]}", key=f"excluir_doc_{doc[0]}"):
+                excluir_documento(doc[0])
+                st.success("Documento excluído com sucesso!")
+                st.experimental_rerun()  # Recarregar a página
+    else:
+        st.info("Nenhum documento encontrado para este processo.")
+
+elif opcao == "Calendário de Prazos e Audiências":
+    st.title("Calendário de Prazos e Audiências 📅")
+    eventos = buscar_eventos()
+
+    # Configuração do calendário
+    calendar_options = {
+        "editable": "true",
+        "selectable": "true",
+        "headerToolbar": {
+            "left": "today prev,next",
+            "center": "title",
+            "right": "resourceTimelineDay,resourceTimelineWeek,resourceTimelineMonth",
+        },
+        "initialView": "resourceTimelineMonth",
+        "resourceGroupField": "resourceId",
+    }
+
+    # Exibir calendário
+    calendar_result = calendar(
+        events=eventos,
+        options=calendar_options,
+        key="calendario"
+    )
+
+    # Exibir detalhes do evento selecionado
+    if calendar_result.get("eventClick"):
+        evento = calendar_result["eventClick"]["event"]
+        st.write(f"### Detalhes do Evento")
+        st.write(f"**Processo:** {evento['title']}")
+        st.write(f"**Data:** {evento['start']}")
+        st.write(f"**Status:** {'Aguardando' if evento['color'] == '#FF6B6B' else 'Concluído'}")

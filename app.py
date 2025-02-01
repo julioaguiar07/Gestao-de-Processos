@@ -179,6 +179,10 @@ def enviar_mensagem(texto):
     except requests.exceptions.RequestException as e:
         print("Erro ao enviar mensagem:", e)  # Log para depuração
 
+def excluir_tarefa(id_tarefa):
+    cursor.execute('DELETE FROM tarefas WHERE id = ?', (id_tarefa,))
+    conn.commit()
+
 # Função para verificar prazos
 def verificar_prazos():
     # Busca todos os processos
@@ -196,7 +200,16 @@ def verificar_prazos():
 
         # Verifica se o prazo está entre 0 e 7 dias
         if 0 <= dias_restantes <= 7:
-            mensagem = f"⚠️ Queria te avisar que o processo nº {processo[2]} (Status: {processo[3]}) está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias."
+                        mensagem = f"""
+🚨 **Alerta de Prazo** 🚨
+
+📋 **Processo:** #{processo[2]}  
+📌 **Status:** {processo[3]}  
+📅 **Prazo Final:** {prazo_final.strftime('%Y-%m-%d')}  
+⏳ **Dias Restantes:** {'**HOJE**' if dias_restantes == 0 else f'{dias_restantes} dia(s)'}
+
+⚠️ **Atenção:** Este processo está próximo do prazo final. Tome as providências necessárias.
+"""
             print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
             try:
                 enviar_mensagem(mensagem)
@@ -230,7 +243,16 @@ def adicionar_tarefa(id_processo, descricao, data):
     VALUES (?, ?, ?)
     ''', (id_processo, descricao, data))
     conn.commit()
-    mensagem = f"📋 Nova Tarefa Criada:\nProcesso ID: {id_processo}\nDescrição: {descricao}\nData: {data}"
+    # Enviar mensagem via Telegram
+    mensagem = f"""
+✅ **Nova Tarefa Criada** ✅
+
+📋 **Processo ID:** #{id_processo}  
+📝 **Descrição:** {descricao}  
+📅 **Data:** {data}
+
+⚠️ **Atenção:** Não se esqueça de realizar essa tarefa dentro do prazo!
+"""
     enviar_mensagem(mensagem)
 
 def listar_tarefas(id_processo):
@@ -243,7 +265,18 @@ def adicionar_registro_financeiro(id_processo, tipo, valor, data, descricao):
     VALUES (?, ?, ?, ?, ?)
     ''', (id_processo, tipo, valor, data, descricao))
     conn.commit()
-    mensagem = f"💰 Novo Registro Financeiro:\nProcesso ID: {id_processo}\nTipo: {tipo}\nValor: R$ {valor:.2f}\nData: {data}\nDescrição: {descricao}"
+    # Enviar mensagem via Telegram
+    mensagem = f"""
+💰 **Novo Registro Financeiro** 💰
+
+📋 **Processo ID:** #{id_processo}  
+📌 **Tipo:** {tipo}  
+💵 **Valor:** R$ {valor:.2f}  
+📅 **Data:** {data}  
+📝 **Descrição:** {descricao}
+
+⚠️ **Atenção:** Registro financeiro adicionado com sucesso. Verifique as métricas atualizadas.
+"""
     enviar_mensagem(mensagem)
 
 def listar_registros_financeiros(id_processo=None):
@@ -413,7 +446,25 @@ elif opcao == "Cadastrar Processos":
             if enviar:
                 adicionar_processo(numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
                 st.success("Processo cadastrado com sucesso!")
-                enviar_mensagem(f"🧑‍⚖️ Um novo processo de número {numero_processo} foi criado! O responsável por ele é: {responsavel}, sua situação: {status}, e sua descrição é: {descricao}. Prazo final: {prazo_final}.")
+                           mensagem = f"""
+🧑‍⚖️ **Processo Novo Criado!** 🧑‍⚖️
+
+📋 **Processo:** #{processo[2]}  
+📌 **Situação:** {processo[3]}  
+🤵🏻 **Responsável(s):** {processo[5]}
+📅 **Prazo Final:** {prazo_final.strftime('%Y-%m-%d')}  
+🚩 **Prioridade:** {processo[7]}  
+
+
+"""
+            print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
+            try:
+                enviar_mensagem(mensagem)
+                st.sidebar.success(f"Mensagem enviada para o processo nº {processo[2]}")
+                mensagens_enviadas += 1  # Incrementa o contador
+            except Exception as e:
+                print(f"Erro ao enviar mensagem: {e}")  # Log para depuração
+                st.sidebar.error(f"Erro ao enviar mensagem para o processo nº {processo[2]}")
                 
 
 elif opcao == "Tarefas":
@@ -424,6 +475,19 @@ elif opcao == "Tarefas":
     if st.button("Adicionar Tarefa"):
         adicionar_tarefa(id_processo, descricao, data_tarefa)
         st.success("Tarefa adicionada com sucesso!")
+
+    st.write("### Tarefas do Processo")
+    tarefas = listar_tarefas(id_processo)
+    for tarefa in tarefas:
+        st.write(f"**ID:** {tarefa[0]} | **Descrição:** {tarefa[2]} | **Data:** {tarefa[3]} | **Concluída:** {'Sim' if tarefa[4] else 'Não'}")
+
+    # Adicionar funcionalidade de exclusão de tarefas
+    st.write("### Excluir Tarefa")
+    id_tarefa_excluir = st.number_input("ID da Tarefa para Excluir", min_value=1, key="excluir_tarefa")
+    if st.button("Excluir Tarefa", key="excluir_tarefa_botao"):
+        excluir_tarefa(id_tarefa_excluir)
+        st.success("Tarefa excluída com sucesso!")
+        st.button("Recarregar Página")  
 
     st.write("### Tarefas do Processo")
     tarefas = listar_tarefas(id_processo)

@@ -196,7 +196,7 @@ def verificar_prazos():
 
         # Verifica se o prazo está entre 0 e 7 dias
         if 0 <= dias_restantes <= 7:
-            mensagem = f"Queria te avisar que o processo nº {processo[2]} (Status: {processo[3]}) está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias."
+            mensagem = f"⚠️ Queria te avisar que o processo nº {processo[2]} (Status: {processo[3]}) está próximo do prazo final ({prazo_final.strftime('%Y-%m-%d')}). Faltam {dias_restantes} dias."
             print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
             try:
                 enviar_mensagem(mensagem)
@@ -220,12 +220,18 @@ def gerar_relatorio_pdf(processos):
     pdf.output("relatorio.pdf")
     st.success("Relatório gerado com sucesso!")
 
+def excluir_registro_financeiro(id_registro):
+    cursor.execute('DELETE FROM financeiro WHERE id = ?', (id_registro,))
+    conn.commit()
+
 def adicionar_tarefa(id_processo, descricao, data):
     cursor.execute('''
     INSERT INTO tarefas (id_processo, descricao, data)
     VALUES (?, ?, ?)
     ''', (id_processo, descricao, data))
     conn.commit()
+    mensagem = f"📋 Nova Tarefa Criada:\nProcesso ID: {id_processo}\nDescrição: {descricao}\nData: {data}"
+    enviar_mensagem(mensagem)
 
 def listar_tarefas(id_processo):
     cursor.execute('SELECT * FROM tarefas WHERE id_processo = ?', (id_processo,))
@@ -237,6 +243,8 @@ def adicionar_registro_financeiro(id_processo, tipo, valor, data, descricao):
     VALUES (?, ?, ?, ?, ?)
     ''', (id_processo, tipo, valor, data, descricao))
     conn.commit()
+    mensagem = f"💰 Novo Registro Financeiro:\nProcesso ID: {id_processo}\nTipo: {tipo}\nValor: R$ {valor:.2f}\nData: {data}\nDescrição: {descricao}"
+    enviar_mensagem(mensagem)
 
 def listar_registros_financeiros(id_processo=None):
     query = 'SELECT * FROM financeiro'
@@ -405,7 +413,7 @@ elif opcao == "Cadastrar Processos":
             if enviar:
                 adicionar_processo(numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
                 st.success("Processo cadastrado com sucesso!")
-                enviar_mensagem(f"Um novo processo de número {numero_processo} foi criado! O responsável por ele é: {responsavel}, sua situação: {status}, e sua descrição é: {descricao}. Prazo final: {prazo_final}.")
+                enviar_mensagem(f"🧑‍⚖️ Um novo processo de número {numero_processo} foi criado! O responsável por ele é: {responsavel}, sua situação: {status}, e sua descrição é: {descricao}. Prazo final: {prazo_final}.")
                 
 
 elif opcao == "Tarefas":
@@ -450,6 +458,14 @@ elif opcao == "Controle Financeiro":
     if registros:
         df_financeiro = pd.DataFrame(registros, columns=["ID", "ID Processo", "Tipo", "Valor", "Data", "Descrição"])
         st.dataframe(df_financeiro)
+
+        # Adicionar botão de exclusão para cada registro
+        st.write("### Excluir Registro Financeiro")
+        id_registro_excluir = st.number_input("ID do Registro para Excluir", min_value=1, key="excluir_registro")
+        if st.button("Excluir Registro", key="excluir_registro_botao"):
+            excluir_registro_financeiro(id_registro_excluir)
+            st.success("Registro financeiro excluído com sucesso!")
+            st.experimental_rerun()  # Recarrega a página para atualizar a tabela
     else:
         st.info("Nenhum registro financeiro encontrado.")
 

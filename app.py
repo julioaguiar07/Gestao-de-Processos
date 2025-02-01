@@ -344,12 +344,12 @@ if opcao == "Início":
             if st.button("Atualizar", key=f"atualizar_{processo[0]}"):
                 atualizar_processo(processo[0], novo_status)
                 st.success("Status atualizado com sucesso!")
-                st.experimental_rerun()
+
 
             if st.button("Excluir", key=f"excluir_{processo[0]}"):
                 excluir_processo(processo[0])
                 st.success("Processo excluído com sucesso!")
-                st.experimental_rerun()
+
 
     # Verificar prazos
     if st.sidebar.button("Verificar Prazos"):

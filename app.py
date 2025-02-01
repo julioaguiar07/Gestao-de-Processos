@@ -327,8 +327,7 @@ def buscar_eventos():
     cursor.execute('''
     SELECT id, numero_processo, prazo_final, descricao, status
     FROM processos
-    WHERE prazo_final IS NOT NULL
-    ''')
+    WHERE prazo_final IS NOT NULL ''')
     processos = cursor.fetchall()
     eventos = []
     for processo in processos:

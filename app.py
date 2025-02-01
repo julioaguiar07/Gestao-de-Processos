@@ -446,26 +446,24 @@ elif opcao == "Cadastrar Processos":
             if enviar:
                 adicionar_processo(numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
                 st.success("Processo cadastrado com sucesso!")
-               mensagem = f"""
-🧑‍⚖️ **Processo Novo Criado!** 🧑‍⚖️
-
-📋 **Processo:** #{processo[2]}  
-📌 **Situação:** {processo[3]}  
-🤵🏻 **Responsável(s):** {processo[5]}
-📅 **Prazo Final:** {prazo_final.strftime('%Y-%m-%d')}  
-🚩 **Prioridade:** {processo[7]}  
-
-
-"""
-            print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
-            try:
-                enviar_mensagem(mensagem)
-                st.sidebar.success(f"Mensagem enviada para o processo nº {processo[2]}")
-                mensagens_enviadas += 1  # Incrementa o contador
-            except Exception as e:
-                print(f"Erro ao enviar mensagem: {e}")  # Log para depuração
-                st.sidebar.error(f"Erro ao enviar mensagem para o processo nº {processo[2]}")
+                mensagem = f"""
+                🧑‍⚖️ **Processo Novo Criado!** 🧑‍⚖️
                 
+                📋 **Processo:** #{processo[2]}  
+                📌 **Situação:** {processo[3]}  
+                🤵🏻 **Responsável(s):** {processo[5]}
+                📅 **Prazo Final:** {prazo_final.strftime('%Y-%m-%d')}  
+                🚩 **Prioridade:** {processo[7]}  
+                """
+                print(f"Mensagem a ser enviada: {mensagem}")  # Log para depuração
+                try:
+                    enviar_mensagem(mensagem)
+                    st.sidebar.success(f"Mensagem enviada para o processo nº {processo[2]}")
+                    mensagens_enviadas += 1  # Incrementa o contador
+                except Exception as e:
+                    print(f"Erro ao enviar mensagem: {e}")  # Log para depuração
+                    st.sidebar.error(f"Erro ao enviar mensagem para o processo nº {processo[2]}")
+
 
 elif opcao == "Tarefas":
     st.title("Gestão de Tarefas")

@@ -704,7 +704,8 @@ if opcao == "Gestão de Documentos":
                     if st.button(f"Excluir Documento {doc[0]}", key=f"excluir_doc_{doc[0]}"):
                         excluir_documento(doc[0])
                         st.success("Documento excluído com sucesso!")
-                        st.experimental_rerun()  # Recarregar a página
+                        st.button("Recarregar Página")  
+
             else:
                 st.info("Nenhum documento encontrado para este processo.")
         else:

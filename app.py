@@ -89,6 +89,14 @@ CREATE TABLE IF NOT EXISTS processos (
 )
 ''')
 
+# Verificar se a coluna 'cliente' existe na tabela 'processos'
+try:
+    cursor.execute('SELECT cliente FROM processos LIMIT 1')
+except sqlite3.OperationalError:
+    # Se a coluna não existir, adicioná-la
+    cursor.execute('ALTER TABLE processos ADD COLUMN cliente TEXT NOT NULL DEFAULT "Cliente Desconhecido"')
+    conn.commit()
+
 # Criar tabela de tarefas
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS tarefas (

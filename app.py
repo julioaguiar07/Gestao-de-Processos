@@ -312,10 +312,7 @@ def calcular_total_financeiro():
     cursor.execute('SELECT tipo, SUM(valor) FROM financeiro GROUP BY tipo')
     return {tipo: total for tipo, total in cursor.fetchall()}
 
-# Função para adicionar documento
 
-
-o
 # Função para listar processos
 def listar_processos():
     cursor.execute('SELECT id, numero_processo, cliente FROM processos')

@@ -331,10 +331,13 @@ def adicionar_documento(id_processo, nome_arquivo, caminho_arquivo):
     conn.commit()
 
     # Enviar mensagem ao Telegram
+    cursor.execute('SELECT numero_processo, cliente FROM processos WHERE id = ?', (id_processo,))
+    processo = cursor.fetchone()
     mensagem = f"""
 📄 Novo Documento Adicionado 📄
 
-📋 Processo ID: {id_processo}  
+📋 Processo: {processo[0]}  
+👤 Cliente: {processo[1]}  
 📂 Nome do Arquivo: {nome_arquivo}  
 📅 Data de Upload: {data_upload}
 
@@ -642,16 +645,17 @@ elif opcao == "Controle Financeiro":
     else:
         st.info("Nenhum dado disponível para exibir gráficos.")
 
+# Interface de Gestão de Documentos
 if opcao == "Gestão de Documentos":
     st.title("Gestão de Documentos 📂")
 
     # Listar processos existentes para escolher o ID
-    cursor.execute('SELECT id, numero_processo FROM processos')
+    cursor.execute('SELECT id, numero_processo, cliente FROM processos')
     processos = cursor.fetchall()
     if processos:
         processo_escolhido = st.selectbox(
             "Selecione um Processo",
-            options=[f"ID: {p[0]} - Nº Processo: {p[1]}" for p in processos],
+            options=[f"ID: {p[0]} - Nº Processo: {p[1]} - Cliente: {p[2]}" for p in processos],
             key="select_processo"
         )
         id_processo = int(processo_escolhido.split(" - ")[0].replace("ID: ", ""))
@@ -676,22 +680,24 @@ if opcao == "Gestão de Documentos":
         if documentos:
             for doc in documentos:
                 st.write(f"**ID:** {doc[0]} | **Nome:** {doc[2]} | **Data de Upload:** {doc[4]}")
-                with open(doc[3], "rb") as f:
-                    st.download_button(
-                        label="Baixar Documento",
-                        data=f,
-                        file_name=doc[2],
-                        mime="application/octet-stream"
-                    )
+                if os.path.exists(doc[3]):
+                    with open(doc[3], "rb") as f:
+                        st.download_button(
+                            label="Baixar Documento",
+                            data=f,
+                            file_name=doc[2],
+                            mime="application/octet-stream"
+                        )
+                else:
+                    st.error(f"Arquivo não encontrado: {doc[3]}")
                 if st.button(f"Excluir Documento {doc[0]}", key=f"excluir_doc_{doc[0]}"):
                     excluir_documento(doc[0])
                     st.success("Documento excluído com sucesso!")
-                    st.button("Recarregar Página")  # Recarregar a página
+                    st.experimental_rerun()  # Recarregar a página
         else:
             st.info("Nenhum documento encontrado para este processo.")
     else:
         st.warning("Nenhum processo cadastrado. Cadastre um processo primeiro.")
-
 if opcao == "Calendário de Prazos e Audiências":
     st.title("Calendário de Prazos e Audiências 📅")
     eventos = buscar_eventos()

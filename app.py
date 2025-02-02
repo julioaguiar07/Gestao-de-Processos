@@ -84,7 +84,8 @@ CREATE TABLE IF NOT EXISTS processos (
     descricao TEXT NOT NULL,
     responsavel TEXT NOT NULL,
     status TEXT NOT NULL,
-    prioridade TEXT NOT NULL
+    prioridade TEXT NOT NULL,
+    cliente TEXT NOT NULL
 )
 ''')
 
@@ -314,7 +315,12 @@ def calcular_total_financeiro():
 # Função para adicionar documento
 
 
-# Função para criar subpasta de um processo
+o
+# Função para listar processos
+def listar_processos():
+    cursor.execute('SELECT id, numero_processo, cliente FROM processos')
+    return cursor.fetchall()
+# Função para criar subpasta de um process
 def criar_subpasta_processo(id_processo):
     pasta_processo = f"documentos/processo_{id_processo}"
     if not os.path.exists(pasta_processo):
@@ -650,54 +656,57 @@ if opcao == "Gestão de Documentos":
     st.title("Gestão de Documentos 📂")
 
     # Listar processos existentes para escolher o ID
-    cursor.execute('SELECT id, numero_processo, cliente FROM processos')
-    processos = cursor.fetchall()
-    if processos:
-        processo_escolhido = st.selectbox(
-            "Selecione um Processo",
-            options=[f"ID: {p[0]} - Nº Processo: {p[1]} - Cliente: {p[2]}" for p in processos],
-            key="select_processo"
-        )
-        id_processo = int(processo_escolhido.split(" - ")[0].replace("ID: ", ""))
+    try:
+        processos = listar_processos()
+        if processos:
+            processo_escolhido = st.selectbox(
+                "Selecione um Processo",
+                options=[f"ID: {p[0]} - Nº Processo: {p[1]} - Cliente: {p[2]}" for p in processos],
+                key="select_processo"
+            )
+            id_processo = int(processo_escolhido.split(" - ")[0].replace("ID: ", ""))
 
-        # Criar subpasta para o processo, se não existir
-        pasta_processo = criar_subpasta_processo(id_processo)
+            # Criar subpasta para o processo, se não existir
+            pasta_processo = criar_subpasta_processo(id_processo)
 
-        # Upload de Documentos
-        st.write("### Adicionar Documento")
-        uploaded_file = st.file_uploader("Escolha um arquivo", type=["pdf", "docx", "xlsx", "txt"])
-        if uploaded_file is not None:
-            nome_arquivo = uploaded_file.name
-            caminho_arquivo = f"{pasta_processo}/{nome_arquivo}"
-            with open(caminho_arquivo, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            adicionar_documento(id_processo, nome_arquivo, caminho_arquivo)
-            st.success("Documento adicionado com sucesso!")
+            # Upload de Documentos
+            st.write("### Adicionar Documento")
+            uploaded_file = st.file_uploader("Escolha um arquivo", type=["pdf", "docx", "xlsx", "txt"])
+            if uploaded_file is not None:
+                nome_arquivo = uploaded_file.name
+                caminho_arquivo = f"{pasta_processo}/{nome_arquivo}"
+                with open(caminho_arquivo, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                adicionar_documento(id_processo, nome_arquivo, caminho_arquivo)
+                st.success("Documento adicionado com sucesso!")
 
-        # Listar Documentos
-        st.write("### Documentos do Processo")
-        documentos = listar_documentos(id_processo)
-        if documentos:
-            for doc in documentos:
-                st.write(f"**ID:** {doc[0]} | **Nome:** {doc[2]} | **Data de Upload:** {doc[4]}")
-                if os.path.exists(doc[3]):
-                    with open(doc[3], "rb") as f:
-                        st.download_button(
-                            label="Baixar Documento",
-                            data=f,
-                            file_name=doc[2],
-                            mime="application/octet-stream"
-                        )
-                else:
-                    st.error(f"Arquivo não encontrado: {doc[3]}")
-                if st.button(f"Excluir Documento {doc[0]}", key=f"excluir_doc_{doc[0]}"):
-                    excluir_documento(doc[0])
-                    st.success("Documento excluído com sucesso!")
-                    st.experimental_rerun()  # Recarregar a página
+            # Listar Documentos
+            st.write("### Documentos do Processo")
+            documentos = listar_documentos(id_processo)
+            if documentos:
+                for doc in documentos:
+                    st.write(f"**ID:** {doc[0]} | **Nome:** {doc[2]} | **Data de Upload:** {doc[4]}")
+                    if os.path.exists(doc[3]):
+                        with open(doc[3], "rb") as f:
+                            st.download_button(
+                                label="Baixar Documento",
+                                data=f,
+                                file_name=doc[2],
+                                mime="application/octet-stream"
+                            )
+                    else:
+                        st.error(f"Arquivo não encontrado: {doc[3]}")
+                    if st.button(f"Excluir Documento {doc[0]}", key=f"excluir_doc_{doc[0]}"):
+                        excluir_documento(doc[0])
+                        st.success("Documento excluído com sucesso!")
+                        st.experimental_rerun()  # Recarregar a página
+            else:
+                st.info("Nenhum documento encontrado para este processo.")
         else:
-            st.info("Nenhum documento encontrado para este processo.")
-    else:
-        st.warning("Nenhum processo cadastrado. Cadastre um processo primeiro.")
+            st.warning("Nenhum processo cadastrado. Cadastre um processo primeiro.")
+    except sqlite3.OperationalError as e:
+        st.error(f"Erro ao acessar o banco de dados: {e}")
+
 if opcao == "Calendário de Prazos e Audiências":
     st.title("Calendário de Prazos e Audiências 📅")
     eventos = buscar_eventos()

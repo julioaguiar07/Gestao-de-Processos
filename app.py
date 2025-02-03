@@ -252,14 +252,44 @@ def verificar_prazos():
         st.sidebar.success(f"Total de mensagens enviadas: {mensagens_enviadas}")
     else:
         st.sidebar.warning("Nenhum processo próximo do prazo foi encontrado.")
+
 def gerar_relatorio_pdf(processos):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
+    
+    # Definir margens
+    pdf.set_left_margin(10)
+    pdf.set_right_margin(10)
+    
+    # Adicionar título ao relatório
+    pdf.set_font("Arial", 'B', 16)
+    pdf.cell(0, 10, "Relatório de Processos", 0, 1, 'C')
+    pdf.ln(10)  # Adicionar espaço após o título
+    
+    # Definir fonte para o conteúdo
+    pdf.set_font("Arial", size=12)
+    
+    # Adicionar conteúdo dos processos
     for processo in processos:
-        pdf.cell(200, 10, txt=f"Processo nº {processo[1]} - Responsável: {processo[5]} - Descrição: {processo[4]} - PRAZO FINAL: {processo[3]}", ln=True)
-    pdf.output("relatorio.pdf")
-    st.success("Relatório gerado com sucesso!")
+        # Formatar o texto do processo
+        texto_processo = f"""
+        Processo nº: {processo[1]}
+        Cliente: {processo[8]}
+        Responsável: {processo[5]}
+        Descrição: {processo[4]}
+        Prazo Final: {processo[3]}
+        Status: {processo[6]}
+        Prioridade: {processo[7]}
+        """
+        
+        # Adicionar o texto ao PDF
+        pdf.multi_cell(0, 10, texto_processo)
+        pdf.ln(5)  # Adicionar espaço entre os processos
+    
+    # Retornar o conteúdo do PDF
+    pdf_output = pdf.output(dest="S").encode("latin1")
+    return pdf_output
 
 def excluir_registro_financeiro(id_registro):
     cursor.execute('DELETE FROM financeiro WHERE id = ?', (id_registro,))
@@ -377,7 +407,7 @@ def excluir_documento(id_documento):
     
 def buscar_eventos():
     cursor.execute('''
-    SELECT id, numero_processo, prazo_final, descricao, status
+    SELECT id, numero_processo, prazo_final, descricao, status, cliente
     FROM processos
     WHERE prazo_final IS NOT NULL
     ''')
@@ -386,58 +416,80 @@ def buscar_eventos():
     for processo in processos:
         eventos.append({
             "title": f"Prazo: {processo[1]} - {processo[3]}",
-            "start": processo[2],
-            "end": processo[2],
-            "resourceId": processo[0],
-            "color": "#FF6B6B" if processo[4] == "Aguardando" else "#4ECDC4"
+            "start": processo[2],  # Data do prazo final
+            "end": processo[2],    # Mesma data, pois é um evento de um dia
+            "resourceId": processo[0],  # ID do processo
+            "color": "#FF6B6B" if processo[4] == "Aguardando" else "#4ECDC4",  # Cor baseada no status
+            "extendedProps": {
+                "cliente": processo[5]  # Adicionando o cliente às propriedades estendidas
+            }
         })
     return eventos
+
+def listar_tarefas_pendentes():
+    cursor.execute('''
+    SELECT t.id, t.id_processo, t.descricao, t.data, p.numero_processo
+    FROM tarefas t
+    JOIN processos p ON t.id_processo = p.id
+    WHERE t.concluida = 1
+    ''')
+    return cursor.fetchall()
+
 # Interface do Streamlit
 st.sidebar.title("Gestão de Processos 📂")
 st.sidebar.text("Sistema de Gerenciamento")
 
-opcao = st.sidebar.radio("Páginas", ["Início", "Cadastrar Processos", "Tarefas", "Relatórios", "Controle Financeiro", "Calendário", "Gestão de Documentos"])
+opcao = st.sidebar.radio("Páginas", ["Início", "Cadastrar Processos", "Tarefas", "Relatórios", "Controle Financeiro","Gestão de Documentos"])
 
 if opcao == "Início":
     st.image("logo.png", width=300)
     st.subheader("Consulta e Atualização de Processos")
 
+    # Barra de pesquisa
+    st.write("### Pesquisar Processo")
+    termo_pesquisa = st.text_input("Digite o número do processo, cliente ou responsável")
 
-    # Filtros
-    st.write("### Filtrar Processos")
-    filtro_status = st.selectbox("Filtrar por Situação", ["",
-                                        "Aguardando Audiência",
-                                        "Aguardando Citação",
-                                        "Aguardando Diligência",
-                                        "Aguardando Manifestação das Partes",
-                                        "Aguardando Pagamento",
-                                        "Aguardando Perícia",
-                                        "Aguardando Provas",
-                                        "Aguardando Recurso",
-                                        "Aguardando Resposta do Réu",
-                                        "Aguardando Sentença",
-                                        "Arquivado",
-                                        "Audiência Realizada – Aguardando Decisão",
-                                        "Baixado",
-                                        "Decisão Transitada em Julgado",
-                                        "Desistência",
-                                        "Distribuído",
-                                        "Em Andamento",
-                                        "Em Cumprimento de Acordo",
-                                        "Em Fase Recursal",
-                                        "Em Execução de Sentença",
-                                        "Extinto sem Resolução do Mérito",
-                                        "Finalizado",
-                                        "Homologado Acordo",
-                                        "Improcedente",
-                                        "Parcialmente Procedente",
-                                        "Procedente",
-                                        "Sentença Proferida",
-                                        "Suspenso"])
-    filtro_responsavel = st.text_input("Buscar por Responsável")
-    filtro_prioridade = st.selectbox("Filtrar por Prioridade", ["", "Alta", "Média", "Baixa"])
+    # Filtros avançados
+    with st.expander("Filtros Avançados"):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            filtro_status = st.selectbox("Filtrar por Situação", ["",
+                                            "Aguardando Audiência",
+                                            "Aguardando Citação",
+                                            "Aguardando Diligência",
+                                            "Aguardando Manifestação das Partes",
+                                            "Aguardando Pagamento",
+                                            "Aguardando Perícia",
+                                            "Aguardando Provas",
+                                            "Aguardando Recurso",
+                                            "Aguardando Resposta do Réu",
+                                            "Aguardando Sentença",
+                                            "Arquivado",
+                                            "Audiência Realizada – Aguardando Decisão",
+                                            "Baixado",
+                                            "Decisão Transitada em Julgado",
+                                            "Desistência",
+                                            "Distribuído",
+                                            "Em Andamento",
+                                            "Em Cumprimento de Acordo",
+                                            "Em Fase Recursal",
+                                            "Em Execução de Sentença",
+                                            "Extinto sem Resolução do Mérito",
+                                            "Finalizado",
+                                            "Homologado Acordo",
+                                            "Improcedente",
+                                            "Parcialmente Procedente",
+                                            "Procedente",
+                                            "Sentença Proferida",
+                                            "Suspenso"])
+        with col2:
+            filtro_responsavel = st.text_input("Buscar por Responsável")
+        with col3:
+            filtro_prioridade = st.selectbox("Filtrar por Prioridade", ["", "Alta", "Média", "Baixa"])
 
+    # Buscar processos com base nos filtros e termo de pesquisa
     resultados = buscar_processos(
+        numero_processo=termo_pesquisa if termo_pesquisa else None,
         status=filtro_status if filtro_status else None,
         responsavel=filtro_responsavel if filtro_responsavel else None,
         prioridade=filtro_prioridade if filtro_prioridade else None
@@ -445,59 +497,75 @@ if opcao == "Início":
 
     # Exibir processos
     st.write("### Processos Encontrados")
-    for processo in resultados:
-        with st.expander(f"Processo nº {processo[1]} - Responsável: {processo[5]}"):
-            st.write(f"**Data:** {processo[2]}")
-            st.write(f"**Prazo Final:** {processo[3]}")
-            st.write(f"**Descrição:** {processo[4]}")
-            st.write(f"**Status Atual:** {processo[6]}")
-            st.write(f"**Prioridade:** {processo[7]}")
+    if resultados:
+        for processo in resultados:
+            with st.expander(f"Processo nº {processo[1]} - Responsável: {processo[5]}"):
+                st.write(f"**Cliente:** {processo[8]}")
+                st.write(f"**Data:** {processo[2]}")
+                st.write(f"**Prazo Final:** {processo[3]}")
+                st.write(f"**Descrição:** {processo[4]}")
+                st.write(f"**Status Atual:** {processo[6]}")
+                st.write(f"**Prioridade:** {processo[7]}")
 
-            novo_status = st.selectbox("Atualizar Status", [                                        
-                                        "Aguardando Audiência",
-                                        "Aguardando Citação",
-                                        "Aguardando Diligência",
-                                        "Aguardando Manifestação das Partes",
-                                        "Aguardando Pagamento",
-                                        "Aguardando Perícia",
-                                        "Aguardando Provas",
-                                        "Aguardando Recurso",
-                                        "Aguardando Resposta do Réu",
-                                        "Aguardando Sentença",
-                                        "Arquivado",
-                                        "Audiência Realizada – Aguardando Decisão",
-                                        "Baixado",
-                                        "Decisão Transitada em Julgado",
-                                        "Desistência",
-                                        "Distribuído",
-                                        "Em Andamento",
-                                        "Em Cumprimento de Acordo",
-                                        "Em Fase Recursal",
-                                        "Em Execução de Sentença",
-                                        "Extinto sem Resolução do Mérito",
-                                        "Finalizado",
-                                        "Homologado Acordo",
-                                        "Improcedente",
-                                        "Parcialmente Procedente",
-                                        "Procedente",
-                                        "Sentença Proferida",
-                                        "Suspenso"], key=f"status_{processo[0]}")
-            if st.button("Atualizar", key=f"atualizar_{processo[0]}"):
-                atualizar_processo(processo[0], novo_status)
-                st.success("Status atualizado com sucesso!")
+                novo_status = st.selectbox("Atualizar Status", [                                        
+                                            "Aguardando Audiência",
+                                            "Aguardando Citação",
+                                            "Aguardando Diligência",
+                                            "Aguardando Manifestação das Partes",
+                                            "Aguardando Pagamento",
+                                            "Aguardando Perícia",
+                                            "Aguardando Provas",
+                                            "Aguardando Recurso",
+                                            "Aguardando Resposta do Réu",
+                                            "Aguardando Sentença",
+                                            "Arquivado",
+                                            "Audiência Realizada – Aguardando Decisão",
+                                            "Baixado",
+                                            "Decisão Transitada em Julgado",
+                                            "Desistência",
+                                            "Distribuído",
+                                            "Em Andamento",
+                                            "Em Cumprimento de Acordo",
+                                            "Em Fase Recursal",
+                                            "Em Execução de Sentença",
+                                            "Extinto sem Resolução do Mérito",
+                                            "Finalizado",
+                                            "Homologado Acordo",
+                                            "Improcedente",
+                                            "Parcialmente Procedente",
+                                            "Procedente",
+                                            "Sentença Proferida",
+                                            "Suspenso"], key=f"status_{processo[0]}")
+                if st.button("Atualizar", key=f"atualizar_{processo[0]}"):
+                    atualizar_processo(processo[0], novo_status)
+                    st.success("Status atualizado com sucesso!")
 
+                if st.button("Excluir", key=f"excluir_{processo[0]}"):
+                    excluir_processo(processo[0])
+                    st.success("Processo excluído com sucesso!")
+    else:
+        st.info("Nenhum processo encontrado com os filtros selecionados.")
 
-            if st.button("Excluir", key=f"excluir_{processo[0]}"):
-                excluir_processo(processo[0])
-                st.success("Processo excluído com sucesso!")
+    # Gráficos e métricas
+    st.markdown("---")
+    st.write("### Métricas e Gráficos")
 
+    # Contar processos por status
+    contagem_status = contar_processos_por_status()
+    if contagem_status:
+        st.write("#### Processos por Status")
+        df_status = pd.DataFrame(list(contagem_status.items()), columns=["Status", "Quantidade"])
+        fig_status = px.bar(df_status, x="Status", y="Quantidade", title="Processos por Status")
+        st.plotly_chart(fig_status)
+    else:
+        st.info("Nenhum processo encontrado para exibir gráficos.")
 
-    # Verificar prazos
+       
     if st.sidebar.button("Verificar Prazos"):
         verificar_prazos()
         st.sidebar.success("Verificação de prazos concluída!")
 
-elif opcao == "Cadastrar Processos":
+if opcao == "Cadastrar Processos":
     st.title("Cadastrar Novo Processo")
 
     # Opção para escolher entre adicionar manualmente ou buscar automaticamente
@@ -510,6 +578,7 @@ elif opcao == "Cadastrar Processos":
             prazo_final = st.text_input("Prazo Final (ex: 2023-09-03)")
             descricao = st.text_input("Descrição")
             responsavel = st.text_input("Responsável")
+            cliente = st.text_input("Cliente")  # Novo campo para cliente
             status = st.selectbox("Situação", [
                                 "Aguardando Audiência",
                                 "Aguardando Citação",
@@ -544,7 +613,11 @@ elif opcao == "Cadastrar Processos":
             enviar = st.form_submit_button("Cadastrar Processo")
 
             if enviar:
-                adicionar_processo(numero_processo, data, prazo_final, descricao, responsavel, status, prioridade)
+                cursor.execute('''
+                INSERT INTO processos (numero_processo, data, prazo_final, descricao, responsavel, status, prioridade, cliente)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (numero_processo, data, prazo_final, descricao, responsavel, status, prioridade, cliente))
+                conn.commit()
                 st.success("Processo cadastrado com sucesso!")
     
                 # Mensagem formatada para o Telegram
@@ -552,6 +625,7 @@ elif opcao == "Cadastrar Processos":
 🧑‍⚖️ Processo Novo Criado! 🧑‍⚖️
 
 📋 Processo: {numero_processo}  
+👤 Cliente: {cliente}  
 📌 Situação: {status}  
 🤵🏻 Responsável(s): {responsavel}
 📅 Prazo Final: {prazo_final}  
@@ -579,6 +653,12 @@ elif opcao == "Tarefas":
     tarefas = listar_tarefas(id_processo)
     for tarefa in tarefas:
         st.write(f"**ID:** {tarefa[0]} | **Descrição:** {tarefa[2]} | **Data:** {tarefa[3]} | **Concluída:** {'Sim' if tarefa[4] else 'Não'}")
+        if not tarefa[4]:
+            if st.button(f"Marcar como Concluída {tarefa[0]}", key=f"concluir_{tarefa[0]}"):
+                cursor.execute('UPDATE tarefas SET concluida = 1 WHERE id = ?', (tarefa[0],))
+                conn.commit()
+                st.success("Tarefa marcada como concluída!")
+                st.button("Recarregar Página")
 
     # Adicionar funcionalidade de exclusão de tarefas
     st.write("### Excluir Tarefa")
@@ -586,15 +666,21 @@ elif opcao == "Tarefas":
     if st.button("Excluir Tarefa", key="excluir_tarefa_botao"):
         excluir_tarefa(id_tarefa_excluir)
         st.success("Tarefa excluída com sucesso!")
-        st.button("Recarregar Página")  
+        st.button("Recarregar Página")
 
 
 elif opcao == "Relatórios":
     st.title("Relatórios")
     if st.button("Gerar Relatório PDF"):
         processos = buscar_processos()
-        gerar_relatorio_pdf(processos)
+        pdf_output = gerar_relatorio_pdf(processos)
         st.success("Relatório gerado com sucesso!")
+        st.download_button(
+            label="Baixar Relatório",
+            data=pdf_output,
+            file_name="relatorio.pdf",
+            mime="application/pdf"
+        )
 
 elif opcao == "Controle Financeiro":
     st.title("Controle Financeiro 💰")
@@ -713,34 +799,3 @@ if opcao == "Gestão de Documentos":
     except sqlite3.OperationalError as e:
         st.error(f"Erro ao acessar o banco de dados: {e}")
 
-if opcao == "Calendário de Prazos e Audiências":
-    st.title("Calendário de Prazos e Audiências 📅")
-    eventos = buscar_eventos()
-
-    # Configuração do calendário
-    calendar_options = {
-        "editable": "true",
-        "selectable": "true",
-        "headerToolbar": {
-            "left": "today prev,next",
-            "center": "title",
-            "right": "resourceTimelineDay,resourceTimelineWeek,resourceTimelineMonth",
-        },
-        "initialView": "resourceTimelineMonth",
-        "resourceGroupField": "resourceId",
-    }
-
-    # Exibir calendário
-    calendar_result = calendar(
-        events=eventos,
-        options=calendar_options,
-        key="calendario"
-    )
-
-    # Exibir detalhes do evento selecionado
-    if calendar_result.get("eventClick"):
-        evento = calendar_result["eventClick"]["event"]
-        st.write(f"### Detalhes do Evento")
-        st.write(f"**Processo:** {evento['title']}")
-        st.write(f"**Data:** {evento['start']}")
-        st.write(f"**Status:** {'Aguardando' if evento['color'] == '#FF6B6B' else 'Concluído'}")
